@@ -309,6 +309,7 @@ BinarySearchTree<Key, Value>::iterator::operator==(
     const BinarySearchTree<Key, Value>::iterator& rhs) const
 {
     // TODO
+    return (current_ == rhs.current_);
 }
 
 /**
@@ -321,6 +322,7 @@ BinarySearchTree<Key, Value>::iterator::operator!=(
     const BinarySearchTree<Key, Value>::iterator& rhs) const
 {
     // TODO
+    return (current_ != rhs.current_);
 
 }
 
@@ -333,6 +335,30 @@ typename BinarySearchTree<Key, Value>::iterator&
 BinarySearchTree<Key, Value>::iterator::operator++()
 {
     // TODO
+
+    Node<Key, Value>* temp = current_; // current_ stores the current pointer to iterate through 
+    Node<Key, Value>* tempParent = temp->getParent(); // tempParent keeps track of the parent of temp 
+
+    // if current_ has a right kid --> go right one --> then leftmost leaf  
+    if(temp->getRight() != nullptr){
+        
+        temp = temp->getRight();
+
+        // while not a leaf!! go left 
+        while(temp->getLeft() != nullptr){
+            temp = temp->getLeft();
+        }
+        current_ = temp;
+        return *this;
+    }
+    else{ // else successor is grandparent
+        while(tempParent != nullptr && temp == tempParent->getRight()) {
+            temp = tempParent;
+            tempParent = tempParent->getParent(); 
+        }
+        current_ = tempParent;
+        return this*;
+    }
 
 }
 
@@ -356,12 +382,14 @@ template<class Key, class Value>
 BinarySearchTree<Key, Value>::BinarySearchTree() 
 {
     // TODO
+    root_ = nullptr; // set to nulptr for an empty tree 
 }
 
 template<typename Key, typename Value>
 BinarySearchTree<Key, Value>::~BinarySearchTree()
 {
     // TODO
+    clear(); // call the clear funcion
 
 }
 
@@ -445,6 +473,51 @@ template<class Key, class Value>
 void BinarySearchTree<Key, Value>::insert(const std::pair<const Key, Value> &keyValuePair)
 {
     // TODO
+
+    // case in which the tree is empty 
+    if(root_ == nullptr){
+
+      // just add new node from root 
+      root_ = new Node<Key, Value>(keyValuePair.first, keyValuePair.second, nullptr); // first is the const getter for the key, second is const getter for the value 
+      return; // done
+    
+    }
+
+    Node<Key, Value>* temp = root_; // start temp at the root 
+    Node<Key, Value>* tempParent = nullptr; // so that we can insert the node later 
+    bool equalNodes = false; // keeps track if we found matching keys 
+
+    // 1. walk the tree until find an empty location 
+    while (temp != nullptr){
+      
+      // go left if value is less than node --> value here would be the key bc that's how BST stores nodes 
+      if(keyValuePair.first < temp->getKey()){
+        tempParent = temp; // update parent
+        temp = temp->getLeft();
+      }
+      // right if greater than node
+      else if(keyValuePair.first > temp->getKey()){
+        tempParent = temp; // update parent
+        temp = temp->getRight();
+      }
+      // else the value is equal so set to reue
+      else{
+        equalNodes = true; 
+        break; // break out of the loop (temp will not be null)
+      }
+    }
+
+    // 2. insert the new node
+    Node<Key, Value>* nodeToInsert = new Node<Key, Value>(keyValuePair.first, keyValuePair.second, tempParent); // create a new node 
+
+    // if less than set as left kid
+    if(keyValuePair.first < tempParent->getKey()){
+      tempParent->setLeft(nodeToInsert);
+    }
+    // its greater than so set as right kid
+    else{
+      tempParent->setRight(nodeToInsert);
+    }
 }
 
 
