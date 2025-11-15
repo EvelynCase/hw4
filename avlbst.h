@@ -197,7 +197,20 @@ void AVLTree<Key, Value>::insert (const std::pair<const Key, Value> &new_item)
       parent->updateBalance(1); // update the balance with the added node of right side
     }
 
-    // 2. check balance!! 
+    // 2. Balance the tree 
+    balanceTree(temp); 
+
+
+    
+
+    return;
+}
+
+// helper function to balance the tree: 
+template<class Key, class Value>
+void AVLTree<Key, Value>:: balanceTree(AVLNode<Key, Value>* temp){
+    
+    AVLNode<Key, Value>* tempParent = temp->getParent(); // tempParent stores the parent of temp 
 
     // base case: 
     if(tempParent == nullptr){
@@ -210,10 +223,10 @@ void AVLTree<Key, Value>::insert (const std::pair<const Key, Value> &new_item)
     if(tempParent->getBalance() == 0){ // if parent is balanced --> all good
         return; 
     }
-
-    
-
-    return;
+    // else tree is not balanced and need to balance it now: 
+    if(temp == tempParent->getRight()){ // temp is the right kid 
+        // fill 
+    }
 }
 
 /*
