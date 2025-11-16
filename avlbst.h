@@ -138,6 +138,8 @@ protected:
 
     // Add helper functions here
 
+    // helper function to balance the tree after an insertion or deletion
+    void balanceTree(AVLNode<Key, Value>* temp);
 
 };
 
@@ -190,15 +192,24 @@ void AVLTree<Key, Value>::insert (const std::pair<const Key, Value> &new_item)
     if(new_item.first < tempParent->getKey()){  
       tempParent->setLeft(nodeToInsert); // go left 
       parent->updateBalance(-1); // update the balance with the added node of left side
+    
+      // 2. Balance the tree 
+      balanceTree(temp, temp->getBalance()); 
     }
     // its greater than so go right
     else{
       tempParent->setRight(nodeToInsert); // go right 
       parent->updateBalance(1); // update the balance with the added node of right side
+    
+      // 2. Balance the tree 
+      balanceTree(temp, +1); 
     }
 
     // 2. Balance the tree 
-    balanceTree(temp); 
+    // balanceTree(temp, -1); 
+
+    // 2. Balance the tree -- call balance on the root 
+    // balanceTree(this->root_); 
 
 
     
@@ -208,25 +219,90 @@ void AVLTree<Key, Value>::insert (const std::pair<const Key, Value> &new_item)
 
 // helper function to balance the tree: 
 template<class Key, class Value>
-void AVLTree<Key, Value>:: balanceTree(AVLNode<Key, Value>* temp){
+void AVLTree<Key, Value>:: balanceTree(AVLNode<Key, Value>* temp, int rol){ // rol stores the number that node added to the tree like +1 is added as right kid or -1 is left 
     
+    //start at tempParent and walk upward to balance along that path
     AVLNode<Key, Value>* tempParent = temp->getParent(); // tempParent stores the parent of temp 
+
+    // base case: 
+    if(tempParent == nullptr || tempParent->getBalance() == 0) {
+        return; // temp is the root so its all good or tree is already balanced 
+    }
+
+    // get grand parent
+    AVLNode<Key, Value>* tempGrandParent = tempParent->getParent(); // tempGrandParent stores the grandparent of temp 
+
+    // if tree is NOT balanced 
+    if(tempParent->getBalance() < -1 || tempParent->getBalance() > 1){
+      if(rol == 1){
+        // temp is a right kid
+        rightRotate(temp, tempParent);
+      }
+      else if if(rol == -1){
+        // temp is a left kid
+        leftRotate(temp, tempParent);
+      }
+      else 
+        return;
+    }
+    // else tree is not balanced and need to balance it now: 
+    if(temp == tempParent->getRight()){ // temp is the right kid 
+      // 1. find balance factor 
+      // 0 -> balanced and good 
+      // +1 -> heavy by one on the right 
+      // -1 -> heavy by one on the left 
+      // +2 or -2 -> unbalanced!!
+    }
+
 
     // base case: 
     if(tempParent == nullptr){
         return; // temp is the root so its all good 
     }
 
-    // get grand parent
-    AVLNode<Key, Value>* tempGrandParent = tempParent->getParent(); // tempGrandParent stores the grandparent of temp 
 
-    if(tempParent->getBalance() == 0){ // if parent is balanced --> all good
-        return; 
-    }
-    // else tree is not balanced and need to balance it now: 
-    if(temp == tempParent->getRight()){ // temp is the right kid 
-        // fill 
-    }
+    // 1. find balance factor 
+    // 0 -> balanced and good 
+    // +1 -> heavy by one on the right 
+    // -1 -> heavy by one on the left 
+    // +2 or -2 -> unbalanced!!
+}
+
+// helper function to rotate nodes right 
+template<class Key, class Value>
+void AVLTree<Key, Value>::rightRotate(AVLNode<Key, Value>* temp, AVLNode<Key, Value>* tempParent){
+  
+  AVLNode<Key, Value>* tempGrandParent = tempParent->getParent(); // tempGrandParent stores the grandparent of temp 
+
+  // base case: 
+  if(tempParent == nullptr || tempGrandParent == nullptr){
+      return; // temp is the root or balanced so its all good 
+  }
+
+  tempGrandParent->setRight(tempGrandParent);
+  tempParent->setParent(tempParent);
+  temp->setParent(temp);
+
+  delete temp; // delete 
+  return;
+}
+
+// helper function to rotate nodes left 
+template<class Key, class Value>
+void AVLTree<Key, Value>::leftRotate(AVLNode<Key, Value>* temp, AVLNode<Key, Value>* tempParent){
+  AVLNode<Key, Value>* tempGrandParent = tempParent->getParent(); // tempGrandParent stores the grandparent of temp 
+
+  // base case: 
+  if(tempParent == nullptr || tempGrandParent == nullptr){
+      return; // temp is the root or balanced so its all good 
+  }
+
+  tempGrandParent->setLeft(tempGrandParent);
+  tempParent->setParent(tempParent);
+  temp->setParent(temp);
+
+  delete temp; // delete 
+  return;
 }
 
 /*
