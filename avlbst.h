@@ -191,7 +191,7 @@ void AVLTree<Key, Value>::insert (const std::pair<const Key, Value> &new_item)
     // if item's key is < parent's key
     if(new_item.first < tempParent->getKey()){  
       tempParent->setLeft(nodeToInsert); // go left 
-      tempParent->updateBalance(1); // update the balance with the added node of left side
+      // tempParent->updateBalance(1); // update the balance with the added node of left side
     
       // 2. Balance the tree 
       balanceTree(tempParent, 1); 
@@ -199,7 +199,7 @@ void AVLTree<Key, Value>::insert (const std::pair<const Key, Value> &new_item)
     // its greater than so go right
     else{
       tempParent->setRight(nodeToInsert); // go right 
-      tempParent->updateBalance(-1); // update the balance with the added node of right side
+      // tempParent->updateBalance(-1); // update the balance with the added node of right side
     
       // 2. Balance the tree 
       balanceTree(tempParent, -1); 
@@ -235,13 +235,14 @@ void AVLTree<Key, Value>:: balanceTree(AVLNode<Key, Value>* tempParent, int rol)
     
     if(rightKid != nullptr && rightKid->getBalance() > 0){
       // case for RL 
-      rightRotate(rightKid, treeIterator);
+      // rightRotate(rightKid, treeIterator);
+      rightRotate(nullptr, rightKid);
     }
-    else {
+    // else {
       // case for RR 
       leftRotate(nullptr, treeIterator);
       return; // the end so return 
-    }
+    // }
   }
   else if(balanceFactor > 1){ // heavy on left kids 
     
@@ -249,13 +250,14 @@ void AVLTree<Key, Value>:: balanceTree(AVLNode<Key, Value>* tempParent, int rol)
     
     if(leftKid != nullptr && leftKid->getBalance() < 0){
       // case for LR 
-      rightRotate(leftKid, treeIterator);
+      // leftRotate(leftKid, treeIterator);
+      leftRotate(nullptr, leftKid);
     }
-    else {
+    // else {
       // case for LL 
       rightRotate(nullptr, treeIterator);
       return; // the end so return 
-    }
+    // }
   }
 
   // get grand parent
@@ -305,43 +307,68 @@ void AVLTree<Key, Value>::rightRotate(AVLNode<Key, Value>* temp, AVLNode<Key, Va
 
   // rotate x, y, z: 
   y->setRight(z);
-  z->setparent(y); 
+  z->setParent(y); 
   z->setLeft(zigzag);
 
   if(zigzag != nullptr){
-    B-setParent(z); 
+    zigzag->setParent(z); 
   }
 
   y->setParent(tempGrandParent); 
   if(tempGrandParent == nullptr){ // at root! 
     this->root_ = y; // set the new root 
   }
-  else if(p->getLeft() == z){
-    thempGrandParent->setLeft(y); // swap with y 
+  else if(tempGrandParent->getLeft() == z){
+    tempGrandParent->setLeft(y); // swap with y 
   }
   else{
-    p->setRight(y);
+    tempGrandParent->setRight(y);
   }
-
-  
 }
 
 // helper function to rotate nodes left 
 template<class Key, class Value>
 void AVLTree<Key, Value>::leftRotate(AVLNode<Key, Value>* temp, AVLNode<Key, Value>* tempParent){
-  AVLNode<Key, Value>* tempGrandParent = tempParent->getParent(); // tempGrandParent stores the grandparent of temp 
 
+  // follow x, y, z rotation 
+  AVLNode<Key, Value>* z = tempParent; // z is the parent 
+  
   // base case: 
-  if(tempParent == nullptr || tempGrandParent == nullptr){
-      return; // temp is the root or balanced so its all good 
+  if(tempParent == nullptr){
+    return; // temp is the root so all good ! 
   }
 
-  tempGrandParent->setLeft(tempGrandParent);
-  tempParent->setParent(tempParent);
-  temp->setParent(temp);
+  AVLNode<Key, Value>* y = z->getRight(); // y is left kid 
 
-  delete temp; // delete 
-  return;
+  // base case: 
+  if(y == nullptr){
+    return; // all good 
+  }
+
+  // figure out LL, RR, LR, RL: 
+  AVLNode<Key, Value>* zagzig = y->getLeft(); // zig zag 
+  AVLNode<Key, Value>* tempGrandParent = z->getParent();
+
+  // rotate x, y, z: 
+  y->getLeft(z);
+  z->setParent(y); 
+  z->setRight(zagzig);
+
+  if(zagzig != nullptr){
+    zagzig->setParent(z); 
+  }
+
+  y->setParent(tempGrandParent); 
+  if(tempGrandParent == nullptr){ // at root! 
+    this->root_ = y; // set the new root 
+  }
+  else if(tempGrandParent->getLeft() == z){
+    tempGrandParent->setLeft(y); // swap with y 
+  }
+  else{
+    tempGrandParent->setRight(y);
+  }
+
 }
 
 /*
@@ -351,14 +378,14 @@ void AVLTree<Key, Value>::leftRotate(AVLNode<Key, Value>* temp, AVLNode<Key, Val
 template<class Key, class Value>
 void AVLTree<Key, Value>:: remove(const Key& key)
 {
-    // TODO
+  // TODO
 
-    // case in which the tree is empty 
-  if(root_ == nullptr){
+  // case in which the tree is empty 
+  if(this->root_ == nullptr){
     return; // just return 
   }
 
-  Node<Key, Value>* temp = root_; // start temp at the root 
+  Node<Key, Value>* temp = this->root_; // start temp at the root 
   Node<Key, Value>* tempParent = nullptr; // so that we can remove nodes with kids 
 
   // 1. walk the tree to find the value to remove --> traverse down 
@@ -389,7 +416,7 @@ void AVLTree<Key, Value>:: remove(const Key& key)
     
     // case if root is the node to delete 
     if(tempParent == nullptr){
-      root_ = nullptr;
+      this->root_ = nullptr;
     }
     // case if left kid
     else if(tempParent->getLeft() == temp){ // temp is left kid 
@@ -406,23 +433,12 @@ void AVLTree<Key, Value>:: remove(const Key& key)
 
   // A. case if nodeToRemove has 2 kids: swap the value with its predecessor -> remove from it's new location 
   if(temp->getLeft() != nullptr && temp->getRight() != nullptr) {
-    Node<Key, Value>* tempPredecessor = predecessor(temp); // to store the predecessor 
-
-    /* if(tempPredecessor != nullptr){ // while tempPredecessor exisits
-      
-      Key predecessorKey = tempPredecessor->getKey(); // store original key before the swap 
-
-      nodeSwap(tempPredecessor, temp); // swap the keys !! 
-      remove(predecessorKey); // remove from new location 
-
-      // swap the items rather than the nodes: 
-      
-    } */
+    Node<Key, Value>* tempPredecessor = BinarySearchTree<Key, Value>::predecessor(temp); // to store the predecessor 
 
     if(tempPredecessor == nullptr)
       return;
 
-    nodeSwap(tempPredecessor, temp);
+    this->nodeSwap(static_castAVLNode<Key, Value>*>(tempPredecessor), static_castAVLNode<Key, Value>*>(temp));
     tempParent = temp->getParent();
   }
 
@@ -444,7 +460,7 @@ void AVLTree<Key, Value>:: remove(const Key& key)
   }
 
   if(tempParent == nullptr){ // the root is the node to deletee
-    root_ = tempKid; 
+    this->root_ = tempKid; 
   }
   else if(tempParent->getLeft() == temp){ // temp is left kid 
     tempParent->setLeft(tempKid); // connect parent
