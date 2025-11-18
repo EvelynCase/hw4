@@ -162,20 +162,20 @@ void AVLTree<Key, Value>::insert (const std::pair<const Key, Value> &new_item)
     
     }
 
-    AVLNode<Key, Value>* temp = this->root_; // start temp at the root 
+    AVLNode<Key, Value>* temp = static_cast<AVLNode<Key, Value>*>(this->root_); // start temp at the root 
     AVLNode<Key, Value>* tempParent = nullptr; // so that we can insert the node later  
 
     // A. walk the tree until find an empty location 
     while (temp != nullptr){
-      
+      tempParent = temp; // to not fall off the end of the tree and have temp be nullptr after 
       // go left if value is less than node --> value here would be the key bc that's how BST stores nodes 
       if(new_item.first < temp->getKey()){
-        tempParent = temp; // update parent
+        // tempParent = temp; // update parent
         temp = temp->getLeft();
       }
       // right if greater than node
       else if(new_item.first > temp->getKey()){
-        tempParent = temp; // update parent
+        // tempParent = temp; // update parent
         temp = temp->getRight();
       }
       // else the value is equal --> key is already in the tree so overwrite !!
@@ -191,100 +191,139 @@ void AVLTree<Key, Value>::insert (const std::pair<const Key, Value> &new_item)
     // if item's key is < parent's key
     if(new_item.first < tempParent->getKey()){  
       tempParent->setLeft(nodeToInsert); // go left 
-      parent->updateBalance(-1); // update the balance with the added node of left side
+      tempParent->updateBalance(1); // update the balance with the added node of left side
     
       // 2. Balance the tree 
-      balanceTree(temp, temp->getBalance()); 
+      balanceTree(tempParent, 1); 
     }
     // its greater than so go right
     else{
       tempParent->setRight(nodeToInsert); // go right 
-      parent->updateBalance(1); // update the balance with the added node of right side
+      tempParent->updateBalance(-1); // update the balance with the added node of right side
     
       // 2. Balance the tree 
-      balanceTree(temp, +1); 
+      balanceTree(tempParent, -1); 
     }
-
-    // 2. Balance the tree 
-    // balanceTree(temp, -1); 
-
-    // 2. Balance the tree -- call balance on the root 
-    // balanceTree(this->root_); 
-
-
-    
 
     return;
 }
 
 // helper function to balance the tree: 
 template<class Key, class Value>
-void AVLTree<Key, Value>:: balanceTree(AVLNode<Key, Value>* temp, int rol){ // rol stores the number that node added to the tree like +1 is added as right kid or -1 is left 
+void AVLTree<Key, Value>:: balanceTree(AVLNode<Key, Value>* tempParent, int rol){ // rol stores the number that node added to the tree like +1 is added as right kid or -1 is left 
     
-    //start at tempParent and walk upward to balance along that path
-    AVLNode<Key, Value>* tempParent = temp->getParent(); // tempParent stores the parent of temp 
+  //start at tempParent and walk upward to balance along that path
+  AVLNode<Key, Value>* treeIterator = tempParent; // start at tempParent to iterate the tree 
 
-    // base case: 
-    if(tempParent == nullptr || tempParent->getBalance() == 0) {
-        return; // temp is the root so its all good or tree is already balanced 
+  // base case: 
+  if(treeIterator == nullptr) { //  || tempParent->getBalance() == 0) {
+    return; // temp is the root so its all good 
+  }
+
+  // 1. find balance factor 
+  treeIterator->updateBalance(rol); // set the balance of the iterator!
+  int8_t balanceFactor = treeIterator->getBalance(); 
+
+  // if tree IS balanced
+  if(balanceFactor == 0){
+    return; // done !
+  }
+  // if tree is NOT balanced 
+  if(balanceFactor < -1){ // heavy on right kids 
+
+    AVLNode<Key, Value>* rightKid = treeIterator->getRight(); // get the right kid
+    
+    if(rightKid != nullptr && rightKid->getBalance() > 0){
+      // case for RL 
+      rightRotate(rightKid, treeIterator);
     }
-
-    // get grand parent
-    AVLNode<Key, Value>* tempGrandParent = tempParent->getParent(); // tempGrandParent stores the grandparent of temp 
-
-    // if tree is NOT balanced 
-    if(tempParent->getBalance() < -1 || tempParent->getBalance() > 1){
-      if(rol == 1){
-        // temp is a right kid
-        rightRotate(temp, tempParent);
-      }
-      else if if(rol == -1){
-        // temp is a left kid
-        leftRotate(temp, tempParent);
-      }
-      else 
-        return;
+    else {
+      // case for RR 
+      leftRotate(nullptr, treeIterator);
+      return; // the end so return 
     }
-    // else tree is not balanced and need to balance it now: 
-    if(temp == tempParent->getRight()){ // temp is the right kid 
-      // 1. find balance factor 
-      // 0 -> balanced and good 
-      // +1 -> heavy by one on the right 
-      // -1 -> heavy by one on the left 
-      // +2 or -2 -> unbalanced!!
+  }
+  else if(balanceFactor > 1){ // heavy on left kids 
+    
+    AVLNode<Key, Value>* leftKid = treeIterator->getLeft(); // get the right kid
+    
+    if(leftKid != nullptr && leftKid->getBalance() < 0){
+      // case for LR 
+      rightRotate(leftKid, treeIterator);
     }
-
-
-    // base case: 
-    if(tempParent == nullptr){
-        return; // temp is the root so its all good 
+    else {
+      // case for LL 
+      rightRotate(nullptr, treeIterator);
+      return; // the end so return 
     }
+  }
 
+  // get grand parent
+  AVLNode<Key, Value>* tempGrandParent = treeIterator->getParent(); // tempGrandParent stores the grandparent of temp 
+  
+  if(tempGrandParent != nullptr){
+    return; // we reached the root ! done !
+  }
 
-    // 1. find balance factor 
-    // 0 -> balanced and good 
-    // +1 -> heavy by one on the right 
-    // -1 -> heavy by one on the left 
-    // +2 or -2 -> unbalanced!!
+  // get the next rol 
+  int r; 
+  if(treeIterator == tempGrandParent->getLeft()){
+    r = 1; // then left kids heavier
+  }
+  else {
+    r = -1; // then right kids heavier 
+  }
+  
+  // recursive call: 
+  balanceTree(tempGrandParent, r); // move up the tree along the path tyo the root
+
+  return; // balanceFactor is zero and good so return !
 }
 
 // helper function to rotate nodes right 
 template<class Key, class Value>
 void AVLTree<Key, Value>::rightRotate(AVLNode<Key, Value>* temp, AVLNode<Key, Value>* tempParent){
   
-  AVLNode<Key, Value>* tempGrandParent = tempParent->getParent(); // tempGrandParent stores the grandparent of temp 
-
+  // follow x, y, z rotation 
+  AVLNode<Key, Value>* z = tempParent; // z is the parent 
+  
   // base case: 
-  if(tempParent == nullptr || tempGrandParent == nullptr){
-      return; // temp is the root or balanced so its all good 
+  if(tempParent == nullptr){
+    return; // temp is the root so all good ! 
   }
 
-  tempGrandParent->setRight(tempGrandParent);
-  tempParent->setParent(tempParent);
-  temp->setParent(temp);
+  AVLNode<Key, Value>* y = z->getLeft(); // y is left kid 
 
-  delete temp; // delete 
-  return;
+  // base case: 
+  if(y == nullptr){
+    return; // all good 
+  }
+
+  // figure out LL, RR, LR, RL: 
+  AVLNode<Key, Value>* zigzag = y->getRight(); // zig zag 
+  AVLNode<Key, Value>* tempGrandParent = z->getParent();
+
+  // rotate x, y, z: 
+  y->setRight(z);
+  z->setparent(y); 
+  z->setLeft(zigzag);
+
+  if(zigzag != nullptr){
+    B-setParent(z); 
+  }
+
+  y->setParent(tempGrandParent); 
+  if(tempGrandParent == nullptr){ // at root! 
+    this->root_ = y; // set the new root 
+  }
+  else if(p->getLeft() == z){
+    thempGrandParent->setLeft(y); // swap with y 
+  }
+  else{
+    p->setRight(y);
+  }
+
+  
 }
 
 // helper function to rotate nodes left 
