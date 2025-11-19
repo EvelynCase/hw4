@@ -139,7 +139,11 @@ protected:
     // Add helper functions here
 
     // helper function to balance the tree after an insertion or deletion
-    void balanceTree(AVLNode<Key, Value>* temp);
+    void balanceTree(AVLNode<Key, Value>* tempParent, int rol);
+    // void balanceTreeForInsert(AVLNode<Key, Value>* tempParent, int rol);
+    // void balanceTreeForRemove(AVLNode<Key, Value>* tempParent, int rol);
+    void rightRotate(AVLNode<Key, Value>* temp, AVLNode<Key, Value>* tempParent);
+    void leftRotate(AVLNode<Key, Value>* temp, AVLNode<Key, Value>* tempParent);
 
 };
 
@@ -203,6 +207,7 @@ void AVLTree<Key, Value>::insert (const std::pair<const Key, Value> &new_item)
     
       // 2. Balance the tree 
       balanceTree(tempParent, -1); 
+      // balanceTreeForInsert(tempParent, -1);
     }
 
     return;
@@ -263,7 +268,7 @@ void AVLTree<Key, Value>:: balanceTree(AVLNode<Key, Value>* tempParent, int rol)
   // get grand parent
   AVLNode<Key, Value>* tempGrandParent = treeIterator->getParent(); // tempGrandParent stores the grandparent of temp 
   
-  if(tempGrandParent != nullptr){
+  if(tempGrandParent == nullptr){
     return; // we reached the root ! done !
   }
 
@@ -281,6 +286,196 @@ void AVLTree<Key, Value>:: balanceTree(AVLNode<Key, Value>* tempParent, int rol)
 
   return; // balanceFactor is zero and good so return !
 }
+
+
+
+
+
+/*
+template<class Key, class Value>
+void AVLTree<Key, Value>:: balanceTreeForInsert(AVLNode<Key, Value>* tempParent, int rol){ // rol stores the number that node added to the tree like +1 is added as right kid or -1 is left 
+    
+  //start at tempParent and walk upward to balance along that path
+  AVLNode<Key, Value>* treeIterator = tempParent; // start at tempParent to iterate the tree 
+
+  // base case: 
+  if(treeIterator == nullptr) { //  || tempParent->getBalance() == 0) {
+    return; // temp is the root so its all good 
+  }
+
+  // 1. find balance factor 
+  treeIterator->updateBalance(rol); // set the balance of the iterator!
+  int8_t balanceFactor = treeIterator->getBalance(); 
+
+  // if tree IS balanced
+  if(balanceFactor == 0){
+    return; // done !
+  }
+  // if tree is NOT balanced 
+  if(balanceFactor < -1){ // heavy on right kids 
+
+    AVLNode<Key, Value>* rightKid = treeIterator->getRight(); // get the right kid
+    
+    if(rightKid != nullptr && rightKid->getBalance() > 0){
+      // case for RL 
+      // rightRotate(rightKid, treeIterator);
+      rightRotate(nullptr, rightKid);
+    }
+    // else {
+      // case for RR 
+      leftRotate(nullptr, treeIterator);
+      return; // the end so return 
+    // }
+  }
+  else if(balanceFactor > 1){ // heavy on left kids 
+    
+    AVLNode<Key, Value>* leftKid = treeIterator->getLeft(); // get the right kid
+    
+    if(leftKid != nullptr && leftKid->getBalance() < 0){
+      // case for LR 
+      // leftRotate(leftKid, treeIterator);
+      leftRotate(nullptr, leftKid);
+    }
+    // else {
+      // case for LL 
+      rightRotate(nullptr, treeIterator);
+      return; // the end so return 
+    // }
+  }
+
+  // get grand parent
+  AVLNode<Key, Value>* tempGrandParent = treeIterator->getParent(); // tempGrandParent stores the grandparent of temp 
+  
+  if(tempGrandParent == nullptr){
+    return; // we reached the root ! done !
+  }
+
+  // get the next rol 
+  int r; 
+  if(treeIterator == tempGrandParent->getLeft()){
+    r = 1; // then left kids heavier
+  }
+  else {
+    r = -1; // then right kids heavier 
+  }
+  
+  // recursive call: 
+  balanceTreeForInsert(tempGrandParent, r); // move up the tree along the path tyo the root
+
+  return; // balanceFactor is zero and good so return !
+}
+
+
+
+template<class Key, class Value>
+void AVLTree<Key, Value>:: balanceTreeForRemove(AVLNode<Key, Value>* tempParent, int rol){ // rol stores the number that node added to the tree like +1 is added as right kid or -1 is left 
+    
+  //start at tempParent and walk upward to balance along that path
+  AVLNode<Key, Value>* treeIterator = tempParent; // start at tempParent to iterate the tree 
+
+  // base case: 
+  if(treeIterator == nullptr) { //  || tempParent->getBalance() == 0) {
+    return; // temp is the root so its all good 
+  }
+
+  // 1. find balance factor 
+  treeIterator->updateBalance(rol); // set the balance of the iterator!
+  int8_t balanceFactor = treeIterator->getBalance(); 
+
+  // if tree IS balanced
+  //if(balanceFactor == 0){
+  //  return; // done !
+  //}
+
+  if(balanceFactor == 1 || balanceFactor == -1){
+    return; // the subtree height didn't change !! so just retrunr
+  }
+
+  // if tree is NOT balanced 
+  if(balanceFactor < -1){ // heavy on right kids 
+
+    AVLNode<Key, Value>* rightKid = treeIterator->getRight(); // get the right kid
+    
+    // find balanceFactor for rightKid: 
+    int8_t balanceFactorOfRightKid;
+    if(rightKid != nullptr){
+      balanceFactorOfRightKid = rightKid->getBalance();
+    }
+    else{
+      balanceFactorOfRightKid = 0; // 
+    }
+
+    if(rightKid != nullptr && balanceFactorOfRightKid > 0){
+      // case for RL 
+      // rightRotate(rightKid, treeIterator);
+      rightRotate(nullptr, rightKid);
+    }
+    // else {
+      // case for RR 
+      leftRotate(nullptr, treeIterator);
+
+      if(balanceFactorOfRightKid != 0){
+        return; // height of this subtree did not decrease 
+      }
+    // }
+  }
+  else if(balanceFactor > 1){ // heavy on left kids 
+    
+    AVLNode<Key, Value>* leftKid = treeIterator->getLeft(); // get the right kid
+    
+    // find balanceFactor for leftKid: 
+    int8_t balanceFactorOfLeftKid;
+    if(leftKid != nullptr){
+      balanceFactorOfLeftKid = leftKid->getBalance();
+    }
+    else{
+      balanceFactorOfLeftKid = 0; // 
+    }
+
+    if(leftKid != nullptr && leftKid->getBalance() < 0){
+      // case for LR 
+      // leftRotate(leftKid, treeIterator);
+      leftRotate(nullptr, leftKid);
+    }
+      // else 
+      // case for LL 
+      rightRotate(nullptr, treeIterator);
+
+      if(balanceFactorOfLeftKid != 0){
+        return;
+      }
+      // return; // the end so return 
+    // }
+  }
+  // then balanceFactor will be good so continue on 
+
+  // get grand parent
+  AVLNode<Key, Value>* tempGrandParent = treeIterator->getParent(); // tempGrandParent stores the grandparent of temp 
+  
+  if(tempGrandParent == nullptr){
+    return; // we reached the root ! done !
+  }
+
+  // get the next rol 
+  int r; 
+  if(treeIterator == tempGrandParent->getLeft()){
+    r = -1; // then left kids heavier
+  }
+  else {
+    r = 1; // then right kids heavier 
+  }
+  
+  // recursive call: 
+  balanceTreeForRemove(tempGrandParent, r); // move up the tree along the path tyo the root
+
+  return; // balanceFactor is zero and good so return !
+}
+
+*/
+
+
+
+
 
 // helper function to rotate nodes right 
 template<class Key, class Value>
@@ -324,7 +519,17 @@ void AVLTree<Key, Value>::rightRotate(AVLNode<Key, Value>* temp, AVLNode<Key, Va
   else{
     tempGrandParent->setRight(y);
   }
-}
+
+  // reset the balance: 
+  z->setBalance(0);
+  y->setBalance(0);
+
+  return;
+} 
+
+
+
+
 
 // helper function to rotate nodes left 
 template<class Key, class Value>
@@ -350,7 +555,7 @@ void AVLTree<Key, Value>::leftRotate(AVLNode<Key, Value>* temp, AVLNode<Key, Val
   AVLNode<Key, Value>* tempGrandParent = z->getParent();
 
   // rotate x, y, z: 
-  y->getLeft(z);
+  y->setLeft(z);
   z->setParent(y); 
   z->setRight(zagzig);
 
@@ -369,7 +574,17 @@ void AVLTree<Key, Value>::leftRotate(AVLNode<Key, Value>* temp, AVLNode<Key, Val
     tempGrandParent->setRight(y);
   }
 
+  // reset the balance: 
+  z->setBalance(0);
+  y->setBalance(0);
+
+  return;
 }
+
+
+
+
+
 
 /*
  * Recall: The writeup specifies that if a node has 2 children you
@@ -413,6 +628,10 @@ void AVLTree<Key, Value>:: remove(const Key& key)
   
   // case if node to remove has zero kids: remove leaf 
   if(temp->getLeft() == nullptr && temp->getRight() == nullptr){
+
+    // keep track of height: 
+    bool removedFromLeft = false; // flag for which side removed on 
+    bool removedFromRight = false; 
     
     // case if root is the node to delete 
     if(tempParent == nullptr){
@@ -421,10 +640,30 @@ void AVLTree<Key, Value>:: remove(const Key& key)
     // case if left kid
     else if(tempParent->getLeft() == temp){ // temp is left kid 
       tempParent->setLeft(nullptr); 
+      removedFromLeft = true;
     }
     // case if right kid 
     else if(tempParent->getRight() == temp){ // temp is right kid 
       tempParent->setRight(nullptr); 
+      removedFromRight = true; 
+    }
+
+    // Rebalance !!! 
+    if(tempParent != nullptr){
+      AVLNode<Key, Value>* avlPtrParent = static_cast<AVLNode<Key, Value>*>(tempParent);
+      int rol = 0; // create rol for balanceTree 
+
+      if(removedFromLeft){
+        rol = -1; // right kids heavier 
+      }
+      if(removedFromRight){
+        rol = 1; // left kids heavier 
+      }
+
+      if(rol != 0){
+        balanceTree(avlPtrParent, rol);
+        // balanceTreeForRemove(avlPtrParent, rol);
+      }
     }
 
     delete temp; // delete 
@@ -438,7 +677,7 @@ void AVLTree<Key, Value>:: remove(const Key& key)
     if(tempPredecessor == nullptr)
       return;
 
-    this->nodeSwap(static_castAVLNode<Key, Value>*>(tempPredecessor), static_castAVLNode<Key, Value>*>(temp));
+    this->nodeSwap(static_cast<AVLNode<Key, Value>*>(tempPredecessor), static_cast<AVLNode<Key, Value>*>(temp));
     tempParent = temp->getParent();
   }
 
@@ -459,16 +698,38 @@ void AVLTree<Key, Value>:: remove(const Key& key)
     tempKid->setParent(tempParent); // connect the parent
   }
 
+  // reset the flags 
+  bool removedFromLeft = false; // flag for which side removed on 
+  bool removedFromRight = false;
+
   if(tempParent == nullptr){ // the root is the node to deletee
     this->root_ = tempKid; 
   }
   else if(tempParent->getLeft() == temp){ // temp is left kid 
     tempParent->setLeft(tempKid); // connect parent
+    removedFromLeft = true; 
   }
   else { // temp is right kid 
     tempParent->setRight(tempKid); // connect parent
+    removedFromRight = true; 
   }
 
+  // Rebalance !!! 
+  if(tempParent != nullptr){
+    AVLNode<Key, Value>* avlPtrParent = static_cast<AVLNode<Key, Value>*>(tempParent);
+    int rol = 0; // create rol for balanceTree 
+
+    if(removedFromLeft){
+      rol = -1; // right kids heavier 
+    }
+    if(removedFromRight){
+      rol = 1; // left kids heavier 
+    }
+
+    if(rol != 0){
+      balanceTree(avlPtrParent, rol);
+    }
+  }
 
   delete temp; // delete  
   return;
